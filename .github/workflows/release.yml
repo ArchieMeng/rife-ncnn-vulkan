@@ -25,29 +25,29 @@ jobs:
 
   ubuntu:
     needs: [setup]
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-ubuntu
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: cache-vulkansdk
       id: cache-vulkansdk
-      uses: actions/cache@v1
+      uses: actions/cache@v5
       with:
-        path: "1.2.162.0"
-        key: vulkansdk-linux-x86_64-1.2.162.0
+        path: "1.4.335.0"
+        key: vulkansdk-linux-x86_64-1.4.335.0
     - name: vulkansdk
       if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
       run: |
-        wget https://sdk.lunarg.com/sdk/download/1.2.162.0/linux/vulkansdk-linux-x86_64-1.2.162.0.tar.gz?Human=true -O vulkansdk-linux-x86_64-1.2.162.0.tar.gz
-        tar -xf vulkansdk-linux-x86_64-1.2.162.0.tar.gz
-        rm -rf 1.2.162.0/source 1.2.162.0/samples
-        find 1.2.162.0 -type f | grep -v -E 'vulkan|glslang' | xargs rm
+        wget https://sdk.lunarg.com/sdk/download/1.4.335.0/linux/vulkansdk-linux-x86_64-1.4.335.0.tar.xz -O vulkansdk-linux-x86_64-1.4.335.0.tar.xz
+        tar -xf vulkansdk-linux-x86_64-1.4.335.0.tar.xz
+        rm -rf 1.4.335.0/source 1.4.335.0/samples
+        find 1.4.335.0 -type f | grep -v -E 'vulkan|glslang' | xargs rm
     - name: build
       run: |
-        export VULKAN_SDK=`pwd`/1.2.162.0/x86_64
+        export VULKAN_SDK=`pwd`/1.4.335.0/x86_64
         mkdir build && cd build
         cmake ../src
         cmake --build . -j 2
@@ -60,7 +60,7 @@ jobs:
         cp -r models/* ${{ env.PACKAGENAME }}
         zip -9 -r ${{ env.PACKAGENAME }}.zip ${{ env.PACKAGENAME }}
     - name: upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.PACKAGENAME }}
         path: ${{ env.PACKAGENAME }}.zip
@@ -70,13 +70,13 @@ jobs:
     steps:
     - name: cache-openmp
       id: cache-openmp
-      uses: actions/cache@v1
+      uses: actions/cache@v5
       with:
         path: openmp-install
         key: openmp-macos-release-11.0.0
     - name: checkout
       if: steps.cache-openmp.outputs.cache-hit != 'true'
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
     - name: openmp
       if: steps.cache-openmp.outputs.cache-hit != 'true'
       run: |
@@ -112,7 +112,7 @@ jobs:
         mkdir -p $GITHUB_WORKSPACE/openmp-install/lib
         lipo -create openmp-11.0.0.src/build-x86_64/install/lib/libomp.a openmp-11.0.0.src/build-arm64/install/lib/libomp.a -o $GITHUB_WORKSPACE/openmp-install/lib/libomp.a
     - name: upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: openmp-macos
         path: openmp-install
@@ -123,11 +123,11 @@ jobs:
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: download-openmp-macos
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: openmp-macos
         path: openmp-macos
@@ -137,42 +137,37 @@ jobs:
         sudo cp openmp-macos/lib/libomp.a $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib
     - name: cache-vulkansdk
       id: cache-vulkansdk
-      uses: actions/cache@v1
+      uses: actions/cache@v5
       with:
-        path: "vulkansdk-macos-1.2.162.0"
-        key: vulkansdk-macos-1.2.162.0
+        path: "vulkansdk-macos-1.4.335.1"
+        key: vulkansdk-macos-1.4.335.1
     - name: vulkansdk
       if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
       run: |
-        wget https://sdk.lunarg.com/sdk/download/1.2.162.0/mac/vulkansdk-macos-1.2.162.0.dmg?Human=true -O vulkansdk-macos-1.2.162.0.dmg
-        hdiutil attach vulkansdk-macos-1.2.162.0.dmg
-        cp -r /Volumes/vulkansdk-macos-1.2.162.0 .
-        rm -rf vulkansdk-macos-1.2.162.0/Applications
-        find vulkansdk-macos-1.2.162.0 -type f | grep -v -E 'vulkan|glslang|MoltenVK' | xargs rm
-        hdiutil detach /Volumes/vulkansdk-macos-1.2.162.0
+        wget https://sdk.lunarg.com/sdk/download/1.4.335.1/mac/vulkansdk-macos-1.4.335.1.zip -O vulkansdk-macos-1.4.335.1.zip
+        7z x vulkansdk-macos-1.4.335.1.zip
+        ./vulkansdk-macOS-1.4.335.1.app/Contents/MacOS/vulkansdk-macOS-1.4.335.1 --root $PWD/vulkansdk-macos-1.4.335.1 --accept-licenses --default-answer --confirm-command install
+        rm -rf vulkansdk-macos-1.4.335.1/Applications
+        find vulkansdk-macos-1.4.335.1 -type f | grep -v -E 'vulkan|glslang|MoltenVK' | xargs rm
     - name: build-x86_64
       run: |
-        export VULKAN_SDK=`pwd`/vulkansdk-macos-1.2.162.0/macOS
+        export VULKAN_SDK=`pwd`/vulkansdk-macos-1.4.335.1/macOS
         mkdir build-x86_64 && cd build-x86_64
-        cmake -DUSE_STATIC_MOLTENVK=ON -DCMAKE_OSX_ARCHITECTURES="x86_64" \
+        cmake -DUSE_STATIC_MOLTENVK=OFF -DCMAKE_OSX_ARCHITECTURES="x86_64" \
             -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
             -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
             -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
-            -DVulkan_INCLUDE_DIR=`pwd`/../vulkansdk-macos-1.2.162.0/MoltenVK/include \
-            -DVulkan_LIBRARY=`pwd`/../vulkansdk-macos-1.2.162.0/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/libMoltenVK.a \
             ../src
         cmake --build . -j 3
     - name: build-arm64
       run: |
-        export VULKAN_SDK=`pwd`/vulkansdk-macos-1.2.162.0/macOS
+        export VULKAN_SDK=`pwd`/vulkansdk-macos-1.4.335.1/macOS
         mkdir build-arm64 && cd build-arm64
-        cmake -DUSE_STATIC_MOLTENVK=ON -DCMAKE_OSX_ARCHITECTURES="arm64" \
+        cmake -DUSE_STATIC_MOLTENVK=OFF -DCMAKE_OSX_ARCHITECTURES="arm64" \
             -DCMAKE_CROSSCOMPILING=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 \
             -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
             -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
             -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
-            -DVulkan_INCLUDE_DIR=`pwd`/../vulkansdk-macos-1.2.162.0/MoltenVK/include \
-            -DVulkan_LIBRARY=`pwd`/../vulkansdk-macos-1.2.162.0/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/libMoltenVK.a \
             ../src
         cmake --build . -j 3
     - name: package
@@ -184,7 +179,7 @@ jobs:
         cp -r models/* ${{ env.PACKAGENAME }}
         zip -9 -r ${{ env.PACKAGENAME }}.zip ${{ env.PACKAGENAME }}
     - name: upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.PACKAGENAME }}
         path: ${{ env.PACKAGENAME }}.zip
@@ -195,21 +190,20 @@ jobs:
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-windows
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: cache-vulkansdk
       id: cache-vulkansdk
-      uses: actions/cache@v1
+      uses: actions/cache@v5
       with:
         path: "VulkanSDK"
-        key: VulkanSDK-1.2.162.0-Installer
+        key: vulkansdk-windows-X64-1.4.335.0.exe
     - name: vulkansdk
       if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
       run: |
-        Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.2.162.0/windows/VulkanSDK-1.2.162.0-Installer.exe?Human=true -OutFile VulkanSDK-1.2.162.0-Installer.exe
-        7z x -aoa ./VulkanSDK-1.2.162.0-Installer.exe -oVulkanSDK
-        Remove-Item .\VulkanSDK\Demos, .\VulkanSDK\Samples, .\VulkanSDK\Third-Party, .\VulkanSDK\Tools, .\VulkanSDK\Tools32, .\VulkanSDK\Bin32, .\VulkanSDK\Lib32 -Recurse
+        Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.4.335.0/windows/vulkansdk-windows-X64-1.4.335.0.exe -OutFile vulkansdk-windows-X64-1.4.335.0.exe
+        ./vulkansdk-windows-X64-1.4.335.0.exe --root $PWD/VulkanSDK --accept-licenses --default-answer --confirm-command install
     - name: build
       run: |
         $env:VULKAN_SDK="$(pwd)/VulkanSDK"
@@ -226,7 +220,7 @@ jobs:
         Copy-Item -Verbose -Recurse -Path "models\*" -Destination "${{ env.PACKAGENAME }}"
         7z a -r ${{ env.PACKAGENAME }}.zip ${{ env.PACKAGENAME }}
     - name: upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.PACKAGENAME }}
         path: ${{ env.PACKAGENAME }}.zip
@@ -236,7 +230,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: download
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
 
